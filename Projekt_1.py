@@ -6,7 +6,28 @@ Created on Sun Nov 23 21:05:08 2025
 """
 import random
 import collections
+
+#Allgemeine Startbedingungen
 spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer"]
+
+def spieler_eingabe():
+    spielername = -1
+    spieler =[]
+    while spielername != "":
+        print(f"\nEingetragene Spieler: {', '.join(spieler)}\n")
+        spielername = input("\nBitte geben Sie einzeln die Spielernamen ein (Enter zum Beenden): ")
+        try:
+            int(spielername)
+            print("\nEingabe von Zahlen nicht erlaubt!\n")
+            continue
+        except:
+            if spielername != "":
+                if spielername in spieler:
+                    print("\nName schon vorhanden.\n")
+                    continue
+                spieler.append(spielername)
+    return spieler
+            
 
 def wuerfeln(anzahl_wuerfel):
     wurf = [random.randint(1,6) for _ in range(anzahl_wuerfel)]
@@ -94,7 +115,7 @@ def spielkarte_bonus(bonus): #letzer Würfel muss auch "bewusst" gewählt werden
     return punkte, tutto
 
                 
-def spielerzug():
+def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
     punkte_runde = 0
     while True:
         punkte_karte = 0
@@ -104,28 +125,47 @@ def spielerzug():
             punkte_karte, tutto = spielkarte_bonus(gezogene_karte)
         elif gezogene_karte == "Aussetzer":
             punkte_runde = 0
-            print("Sie müssen Aussetzen.")
+            print("\nSie müssen Aussetzen.\n")
             return punkte_runde
         #Hier weitere karten einfügen
         if punkte_karte > 0:
             punkte_runde += punkte_karte
         else:
             punkte_runde = 0
-            print("\nAlle Punkte verloren.\n")
+            print("\nAlle Punkte verloren.\n") 
         if tutto == False:
             return punkte_runde
         else:
             print("\nIn diesem Zug haben Sie bisher", punkte_runde, "Punkte gesammelt.\n")
-            if input("Neue Karte ziehen [ja] oder Zug final beenden [nein]? ") == "ja":
+            if input("\nNeue Karte ziehen [ja] oder Zug final beenden [nein]? \n") == "ja":
                 continue
             else:
                 return punkte_runde
 
-print(spielerzug())
 
+def spielablauf():
+    spieler = spieler_eingabe() #Beim Erreichen der Punkte, wird Spiel direkt beendet.
+    spielmarker = random.randint(0,len(spieler)+1)
+    punktestand = {spielername: 0 for spielername in spieler}
+    spiel_beendet = False
+    while not spiel_beendet:
+        for spieler_name, punkte in punktestand.items():
+            if punkte > 6000:
+                print(f"\n{spieler_name}, Sie haben gewonnen und haben {punkte} Punkte.\n")
+                spiel_beendet = True
+                break
+        if spiel_beendet == True:
+            break
+        if spielmarker > len(spieler) - 1:
+            spielmarker = 0
+        spieler_an_der_reihe = spieler[spielmarker]
+        print(f"\nAktueller Punktestand: {punktestand}\n")
+        print("\n",spieler_an_der_reihe, ", du bist dran:\n")
+        punkte_runde = spielerzug()
+        punktestand[spieler_an_der_reihe] += punkte_runde
+        spielmarker += 1
 
-
-
+spielablauf()
 
 
 
