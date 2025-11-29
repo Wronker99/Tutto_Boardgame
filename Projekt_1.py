@@ -8,8 +8,8 @@ import random
 import collections
 
 #Allgemeine Startbedingungen
-spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse"]
-#spielkarten = ["Strasse"]
+spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk"]
+wahrscheinlichkeiten = [5,5,5,5,5,5,20,10]
 
 def spieler_eingabe():
     spielername = -1
@@ -109,7 +109,7 @@ def spielkarte_bonus(bonus): #letzer Würfel muss auch "bewusst" gewählt werden
                 punkte += bonus
             tutto = True
         else:
-            print(f"\nVor Ihnen liegen akutell {punkte} Punkte.\n")
+            print(f"\nVor Ihnen liegen aktuell {punkte} Punkte.\n")
             print(f"\nNochmal mit {anzahl_wuerfel} Würfel würfeln [ja] oder Zug beenden [nein]: \n")
             nochmal_wuerfeln = input()
     return punkte, tutto
@@ -125,8 +125,7 @@ def spielkarte_strasse():
             if wuerfel not in strasse:
                 strasse.append(wuerfel)
                 anzahl_wuerfel -= 1
-                weitermachen = True
-                
+                weitermachen = True     
     strasse.sort()
     if len(strasse) == 6:
         tutto = True
@@ -136,13 +135,22 @@ def spielkarte_strasse():
         punkte_karte = 0
     return punkte_karte, tutto    
 
+def spielkarte_feuerwerk():
+    weggelegte_wuerfel = 0
+    anzahl_wuerfel = 6
+    while weggelegte_wuerfel == 6:
+        wurf = wuerfeln(anzahl_wuerfel)
+        punkte_pruefen(wurf)
+        
+    return
 
 def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
     punkte_runde = 0
     while True:
         punkte_karte = 0
         tutto = False
-        gezogene_karte = random.choice(spielkarten)
+        gezogene_karte = random.choices(spielkarten, weights=wahrscheinlichkeiten,k=1)
+        gezogene_karte = gezogene_karte[0]
         if isinstance(gezogene_karte, int) or gezogene_karte == "x2":
             punkte_karte, tutto = spielkarte_bonus(gezogene_karte)
         elif gezogene_karte == "Aussetzer":
@@ -150,9 +158,11 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
             print("\nSie müssen Aussetzen. Punkte aus dieser Runde wurden verloren.\n")
             return punkte_runde
         elif gezogene_karte == "Strasse":
-            print("\n Sie haben eine Strasse gezogen\n")
+            print("\nSie haben eine Strasse gezogen.\n")
             punkte_karte, tutto = spielkarte_strasse()
-            
+        elif gezogene_karte == "Feuerwerk":
+            print("\nSie haben ein Feuerwerk gezogen.\n")
+            punkte_karte = spielkarte_feuerwerk()
         #Hier weitere karten einfügen
         
         if punkte_karte > 0:
@@ -171,7 +181,7 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
 
 def spielablauf():
     spieler = spieler_eingabe() #Beim Erreichen der Punkte, wird Spiel direkt beendet.
-    spielmarker = random.randint(0,len(spieler)+1)
+    spielmarker = random.randint(0,len(spieler) - 1)
     punktestand = {spielername: 0 for spielername in spieler}
     spiel_beendet = False
     while not spiel_beendet:
@@ -192,7 +202,6 @@ def spielablauf():
         spielmarker += 1
 
 spielablauf()
-
 
 
 
