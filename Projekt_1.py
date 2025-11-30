@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
 """
+Created on Sun Nov 30 18:09:11 2025
+
+@author: fkrap
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Sun Nov 23 21:05:08 2025
 
 @author: fkrap
 """
 import random
 import collections
+import datetime
+import sys
+import os
 
 #Allgemeine Startbedingungen
 spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk", "plus_minus_tausend", "Kleeblatt"]
@@ -28,6 +38,62 @@ def spieler_eingabe():
                     continue
                 spieler.append(spielername)
     return spieler
+
+def spielstand_speichern(punktestand):
+    global spielmarker
+    datum_uhrzeit = str(datetime.datetime.now())
+    datum_uhrzeit = datum_uhrzeit[0:19:1]
+    dateiname = input("Speichern als: ") + ".txt"
+    dateiname = dateiname.replace(":", "-").replace(" ", "-").strip()
+    with open(dateiname, 'w') as datei:
+        datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
+        for spieler, punkte in punktestand.items():
+            datei.write(f"{spieler}: {punkte}\n")
+    print(f"Spiel erfolgreich im Arbeitsspeicher unter {dateiname} gespeichert.")
+    sys.exit()
+
+def spielstand_auswaehlen():
+    alle_dateien = os.listdir('.')
+    spielstaende = [datei for datei in alle_dateien if datei.endswith(".txt")]
+    anzahl_dateien = len(spielstaende)
+    if anzahl_dateien == 0:
+        print("\nEs wurden keine Spielstände zum Laden gefunden.")
+        return None
+    print("\nAlle verfügbaren Spielstände: \n\n")
+    i = 1
+    for spielstand in spielstaende:
+        print(f"{i}: {spielstand}")
+        i += 1
+    while True:
+        try:
+            auswahl = int(input("Welcher Spielstand soll geladen werden? [Nr.] Neues Spiel [0]\n\n"))
+        except:
+            print("Eingabe ungültig")
+            continue
+        if auswahl > anzahl_dateien:
+            print("Eingabe ungültig")
+            continue
+        if auswahl == 0:
+            return None
+        dateiname = spielstaende[auswahl - 1]
+        return dateiname
+    
+
+def spielstand_laden(dateiname):
+    punktestand = {}
+    spieler = []
+    with open(dateiname, 'r') as datei:
+        for _ in range(3):
+            datei.readline()
+        zeile_spielmarker = datei.readline()
+        _, spielmarker = zeile_spielmarker.split("=", 1)
+        datei.readline()
+        for zeile in datei:
+            zeile = zeile.strip()
+            spieler_name, punkte_str = zeile.split(":", 1)
+            punktestand[spieler_name] = int(punkte_str)
+            spieler.append(spieler_name)
+    return int(spielmarker.strip()), punktestand, spieler
             
 def wuerfeln(anzahl_wuerfel):
     wurf = [random.randint(1,6) for _ in range(anzahl_wuerfel)]
@@ -231,11 +297,14 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
             if geschafft == True:
                 punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
                 fuehrender_spieler = next(iter(punktestand_sortiert))
-                if punktestand[fuehrender_spieler] >= 1000:
+                if punktestand[fuehrender_spieler] >= 1000 and fuehrender_spieler != spieler_an_der_reihe:
                     punktestand[fuehrender_spieler] -= 1000
-                else:
+                elif fuehrender_spieler != spieler_an_der_reihe:
                     punktestand[fuehrender_spieler] = 0
-                print(f"\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte und {fuehrender_spieler} werden 1000[max] abgezogen.")
+                if fuehrender_spieler != spieler_an_der_reihe:
+                    print(f"\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte und {fuehrender_spieler} werden 1000[max] abgezogen.")
+                else:
+                    print("\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte")
                 punkte_runde = 1000
                 return punkte_runde
             else:
@@ -265,11 +334,26 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
             else:
                 return punkte_runde
 
-def spielablauf():
+def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
     global punktestand
-    spieler = spieler_eingabe() #Beim Erreichen der Punkte, wird Spiel direkt beendet.
-    spielmarker = random.randint(0,len(spieler) - 1)
-    punktestand = {spielername: 0 for spielername in spieler}
+    global spieler_an_der_reihe #Name des Spieler
+    global spielmarker #Position des Spielers in der Liste spieler
+    
+    dateiname = spielstand_auswaehlen()
+    if dateiname:
+        spielmarker, punktestand, spieler = spielstand_laden(dateiname)
+        beginnender_spieler = spielmarker
+        
+        
+    else:
+        print("\nEs wird ein neues Spiel gestartet.\n")
+        spieler = spieler_eingabe()
+        beginnender_spieler = random.randint(0,len(spieler) - 1)
+        spielmarker = beginnender_spieler
+        punktestand = {spielername: 0 for spielername in spieler}
+        
+        
+    erste_runde = True
     spiel_beendet = False
     while not spiel_beendet:
         for spieler_name, punkte in punktestand.items():
@@ -280,19 +364,28 @@ def spielablauf():
                 break
         if spiel_beendet == True:
             break
-        if spielmarker > len(spieler) - 1:
-            spielmarker = 0
+        if spielmarker == beginnender_spieler and erste_runde != True:
+            speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [nein]?\n")
+            if speichern == "nein":
+                pass
+            if speichern == "ja":
+                print(f"\nAktueller Punktestand: {punktestand}\n")
+                spielstand_speichern(punktestand)
         spieler_an_der_reihe = spieler[spielmarker]
         print(f"\nAktueller Punktestand: {punktestand}\n")
         print(f"\n{spieler_an_der_reihe}, du bist dran:")
         punkte_runde = spielerzug()
+
         if punkte_runde < 0:
             print(f"\n{spieler_an_der_reihe}, du hast durch das Kleblatt gewonnen!\n")
             break
         else:
             punktestand[spieler_an_der_reihe] += punkte_runde
             spielmarker += 1
-
+            erste_runde = False
+            if spielmarker > len(spieler) - 1:
+                spielmarker = 0
+        
 spielablauf()
 
 
