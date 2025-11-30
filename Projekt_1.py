@@ -8,8 +8,8 @@ import random
 import collections
 
 #Allgemeine Startbedingungen
-spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk"]
-wahrscheinlichkeiten = [5,5,5,5,5,5,20,10]
+spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk", "plus_minus_tausend", "Kleeblatt"]
+wahrscheinlichkeiten =[5,5,5,5,5,5,10,5,5,5,1] #56 Karten
 
 def spieler_eingabe():
     spielername = -1
@@ -136,26 +136,87 @@ def spielkarte_strasse():
     return punkte_karte, tutto    
 
 def spielkarte_feuerwerk():
-    weggelegte_wuerfel = 0
     anzahl_wuerfel = 6
-    while weggelegte_wuerfel == 6:
+    punkte = 0
+    while True:
         wurf = wuerfeln(anzahl_wuerfel)
-        punkte_pruefen(wurf)
-        
-    return
+        #print(wurf)
+        haeufigkeiten = collections.Counter(wurf)
+        for wert, anzahl in list(haeufigkeiten.items()):
+            while anzahl >= 3:
+                if wert == 1:
+                    punkte += 1000
+                else:
+                    punkte += wert * 100
+                anzahl -= 3
+                haeufigkeiten[wert] -= 3
+                for _ in range(3):
+                    wurf.remove(wert)
+        for wert, anzahl in list(haeufigkeiten.items()):
+            if wert == 1 and anzahl != 0:
+                punkte += anzahl * 100
+                wurf.remove(wert)
+            elif wert == 5 and anzahl != 0:
+                punkte += anzahl * 50
+                wurf.remove(wert)
+        if len(wurf) == anzahl_wuerfel:
+            return punkte
+        if len(wurf) == 0:
+            anzahl_wuerfel = 6
+        else:
+            anzahl_wuerfel = len(wurf)
+        #print(wurf)
+        continue
+
+def spielkarte_plus_minus_tausend():
+    anzahl_wuerfel = 6
+    while True:
+        wurf = wuerfeln(anzahl_wuerfel)
+        haeufigkeiten = collections.Counter(wurf)
+        for wert, anzahl in list(haeufigkeiten.items()):
+            while anzahl >= 3:
+                anzahl -= 3
+                haeufigkeiten[wert] -= 3
+                for _ in range(3):
+                    wurf.remove(wert)
+        for wert, anzahl in list(haeufigkeiten.items()):
+            if wert == 1 and anzahl != 0:
+                wurf.remove(wert)
+            elif wert == 5 and anzahl != 0:
+                wurf.remove(wert)
+        if len(wurf) == anzahl_wuerfel:
+            tutto = False
+            return tutto
+        elif len(wurf) == 0:
+            tutto = True
+            return tutto
+        else:
+            anzahl_wuerfel = len(wurf)
+            continue
+
+def spielkarte_kleeblatt():
+    tutto_1 = spielkarte_plus_minus_tausend()
+    if tutto_1 == True:
+        tutto_2 = spielkarte_plus_minus_tausend()
+    else:
+        return False
+    if tutto_2 == True:
+        return True
+    else:
+        return False
 
 def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
     punkte_runde = 0
+    global punktestand
     while True:
         punkte_karte = 0
         tutto = False
-        gezogene_karte = random.choices(spielkarten, weights=wahrscheinlichkeiten,k=1)
-        gezogene_karte = gezogene_karte[0]
+        gezogene_karte = random.choices(spielkarten, weights=wahrscheinlichkeiten,k=1)[0]
         if isinstance(gezogene_karte, int) or gezogene_karte == "x2":
             punkte_karte, tutto = spielkarte_bonus(gezogene_karte)
         elif gezogene_karte == "Aussetzer":
             punkte_runde = 0
-            print("\nSie müssen Aussetzen. Punkte aus dieser Runde wurden verloren.\n")
+            print("\nSie müssen Aussetzen. Bisher gesammelte Punkte in dieser Runde gehen verloren.\n")
             return punkte_runde
         elif gezogene_karte == "Strasse":
             print("\nSie haben eine Strasse gezogen.\n")
@@ -163,6 +224,31 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
         elif gezogene_karte == "Feuerwerk":
             print("\nSie haben ein Feuerwerk gezogen.\n")
             punkte_karte = spielkarte_feuerwerk()
+            print(f"\nSie haben {punkte_karte} Punkte erspielt.\n")
+        elif gezogene_karte == "plus_minus_tausend":
+            print("\nSie haben +/- Tausend gezogen.\n")
+            geschafft = spielkarte_plus_minus_tausend()
+            if geschafft == True:
+                punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
+                fuehrender_spieler = next(iter(punktestand_sortiert))
+                if punktestand[fuehrender_spieler] >= 1000:
+                    punktestand[fuehrender_spieler] -= 1000
+                else:
+                    punktestand[fuehrender_spieler] = 0
+                print(f"\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte und {fuehrender_spieler} werden 1000[max] abgezogen.")
+                punkte_runde = 1000
+                return punkte_runde
+            else:
+                print("\nTutto nicht geschafft. Der nächste Spieler ist an der Reihe.\n")
+        elif gezogene_karte == "Kleeblatt":
+            geschafft = spielkarte_kleeblatt()
+            if geschafft == True:
+                punkte_runde = -1
+                return punkte_runde
+            else:
+                punkte_runde = 0
+                print("\nKleeblatt nicht geschafft.\n")
+            
         #Hier weitere karten einfügen
         
         if punkte_karte > 0:
@@ -180,6 +266,7 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
                 return punkte_runde
 
 def spielablauf():
+    global punktestand
     spieler = spieler_eingabe() #Beim Erreichen der Punkte, wird Spiel direkt beendet.
     spielmarker = random.randint(0,len(spieler) - 1)
     punktestand = {spielername: 0 for spielername in spieler}
@@ -188,6 +275,7 @@ def spielablauf():
         for spieler_name, punkte in punktestand.items():
             if punkte >= 6000:
                 print(f"\n{spieler_name}, Sie haben gewonnen und haben {punkte} Punkte.\n")
+                print(f"\nAbschließender Gesamtpunktstand: {punktestand}")
                 spiel_beendet = True
                 break
         if spiel_beendet == True:
@@ -196,10 +284,14 @@ def spielablauf():
             spielmarker = 0
         spieler_an_der_reihe = spieler[spielmarker]
         print(f"\nAktueller Punktestand: {punktestand}\n")
-        print("\n",spieler_an_der_reihe, ", du bist dran:\n")
+        print(f"\n{spieler_an_der_reihe}, du bist dran:")
         punkte_runde = spielerzug()
-        punktestand[spieler_an_der_reihe] += punkte_runde
-        spielmarker += 1
+        if punkte_runde < 0:
+            print(f"\n{spieler_an_der_reihe}, du hast durch das Kleblatt gewonnen!\n")
+            break
+        else:
+            punktestand[spieler_an_der_reihe] += punkte_runde
+            spielmarker += 1
 
 spielablauf()
 
