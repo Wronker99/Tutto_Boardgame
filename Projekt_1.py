@@ -26,7 +26,7 @@ def spieler_eingabe():
     spieler =[]
     while spielername != "":
         print(f"\nEingetragene Spieler: {', '.join(spieler)}\n")
-        spielername = input("\nBitte geben Sie einzeln die Spielernamen ein (Enter zum Beenden): ")
+        spielername = input("\nBitte gib  einzeln die Spielernamen ein (Enter zum Beenden): ")
         try:
             int(spielername)
             print("\nEingabe von Zahlen nicht erlaubt!\n")
@@ -41,32 +41,40 @@ def spieler_eingabe():
 
 def spielstand_speichern(punktestand):
     global spielmarker
+    global spieler
     datum_uhrzeit = str(datetime.datetime.now())
     datum_uhrzeit = datum_uhrzeit[0:19:1]
-    dateiname = input("Speichern als: ") + ".txt"
-    dateiname = dateiname.replace(":", "-").replace(" ", "-").strip()
-    with open(dateiname, 'w') as datei:
-        datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
-        for spieler, punkte in punktestand.items():
-            datei.write(f"{spieler}: {punkte}\n")
-    print(f"Spiel erfolgreich im Arbeitsspeicher unter {dateiname} gespeichert.")
-    sys.exit()
+    if spiel_beendet == True:
+        with open("Archiv.txt", 'a') as archiv:
+            archiv.write(f"Finaler Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Gewinner = {spieler[spielmarker]}\n" + "-" * 30 + "\n\n")
+            for spieler, punkte in punktestand.items():
+                archiv.write(f"{spieler}: {punkte}\n")
+            archiv.write(100 * "_" + "\n")
+            print("\nDie Partie wurde im Archiv gespeichert.\n")
+    else:
+        dateiname = input("Speichern als: ") + ".txt"
+        dateiname = dateiname.replace(":", "-").replace(" ", "-").strip()
+        with open(dateiname, 'w') as datei:
+            datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
+            for spieler, punkte in punktestand.items():
+                datei.write(f"{spieler}: {punkte}\n")
+        print(f"Spiel erfolgreich im Arbeitsspeicher unter \"{dateiname[:-4]}\" gespeichert.")
 
 def spielstand_auswaehlen():
     alle_dateien = os.listdir('.')
-    spielstaende = [datei for datei in alle_dateien if datei.endswith(".txt")]
+    spielstaende = [datei for datei in alle_dateien if datei.endswith(".txt") and not datei.startswith("Archiv")]
     anzahl_dateien = len(spielstaende)
     if anzahl_dateien == 0:
         print("\nEs wurden keine Spielstände zum Laden gefunden.")
         return None
-    print("\nAlle verfügbaren Spielstände: \n\n")
+    print("\nVerfügbare Spielstände: \n\n")
     i = 1
     for spielstand in spielstaende:
-        print(f"{i}: {spielstand}")
+        print(f"{i}: {spielstand[:-4]}\n")
         i += 1
     while True:
         try:
-            auswahl = int(input("Welcher Spielstand soll geladen werden? [Nr.] Neues Spiel [0]\n\n"))
+            auswahl = int(input("\nWelcher Spielstand soll geladen werden? [Nr.] Neues Spiel [0]\n\n"))
         except:
             print("Eingabe ungültig")
             continue
@@ -160,12 +168,12 @@ def spielkarte_bonus(bonus): #letzer Würfel muss auch "bewusst" gewählt werden
             weggelegte_wuerfel, uebrige_wuerfel  =wuerfel_auswaehlen(wurf)
             punkte_Auswahl, korrekte_Auswahl = punkte_pruefen(weggelegte_wuerfel)
             if korrekte_Auswahl == False:
-                print("\nSie haben ungültige Würfel weggelegt. Bitte erneut Auswählen\n")
+                print("\nDu hast ungültige Würfel weggelegt. Bitte erneut Auswählen\n")
                 continue
             punkte += punkte_Auswahl
             anzahl_wuerfel -= len(weggelegte_wuerfel)
             if punkte_pruefen(uebrige_wuerfel)[0] != 0:
-                if input("\nSie könnten noch Würfel weglegen. Nochmal auswählen? [ja] ansonsten [nein]\n") == "ja":
+                if input("\nDu könntest noch Würfel weglegen. Nochmal auswählen? [ja] ansonsten [nein]\n") == "ja":
                     continue
             break
         if len(uebrige_wuerfel) == 0:
@@ -282,17 +290,17 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
             punkte_karte, tutto = spielkarte_bonus(gezogene_karte)
         elif gezogene_karte == "Aussetzer":
             punkte_runde = 0
-            print("\nSie müssen Aussetzen. Bisher gesammelte Punkte in dieser Runde gehen verloren.\n")
+            print("\nDu musst Aussetzen. Bisher gesammelte Punkte in dieser Runde gehen verloren.\n")
             return punkte_runde
         elif gezogene_karte == "Strasse":
-            print("\nSie haben eine Strasse gezogen.\n")
+            print("\nDu hast eine Strasse gezogen.\n")
             punkte_karte, tutto = spielkarte_strasse()
         elif gezogene_karte == "Feuerwerk":
-            print("\nSie haben ein Feuerwerk gezogen.\n")
+            print("\nDu hast ein Feuerwerk gezogen.\n")
             punkte_karte = spielkarte_feuerwerk()
-            print(f"\nSie haben {punkte_karte} Punkte erspielt.\n")
+            print(f"\nDu hast {punkte_karte} Punkte erspielt.\n")
         elif gezogene_karte == "plus_minus_tausend":
-            print("\nSie haben +/- Tausend gezogen.\n")
+            print("\nDu hast +/- Tausend gezogen.\n")
             geschafft = spielkarte_plus_minus_tausend()
             if geschafft == True:
                 punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
@@ -302,9 +310,9 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
                 elif fuehrender_spieler != spieler_an_der_reihe:
                     punktestand[fuehrender_spieler] = 0
                 if fuehrender_spieler != spieler_an_der_reihe:
-                    print(f"\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte und {fuehrender_spieler} werden 1000[max] abgezogen.")
+                    print(f"\nDu hast das Tutto geschafft!\n\nDu erhältst 1000 Punkte und {fuehrender_spieler} werden 1000[max] abgezogen.")
                 else:
-                    print("\nSie haben das Tutto geschafft!\n\nSie erhalten 1000 Punkte")
+                    print("\nDu hast das Tutto geschafft!\n\nDu erhältst 1000 Punkte")
                 punkte_runde = 1000
                 return punkte_runde
             else:
@@ -328,7 +336,7 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
         if tutto == False:
             return punkte_runde
         else:
-            print("\nIn diesem Zug haben Sie bisher", punkte_runde, "Punkte gesammelt.\n")
+            print("\nIn diesem Zug hast Du bisher", punkte_runde, "Punkte gesammelt.\n")
             if input("\nNeue Karte ziehen [ja] oder Zug final beenden [nein]? \n") == "ja":
                 continue
             else:
@@ -338,13 +346,15 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
     global punktestand
     global spieler_an_der_reihe #Name des Spieler
     global spielmarker #Position des Spielers in der Liste spieler
+    global spiel_beendet
+    global spieler
+    erste_runde = True
+    spiel_beendet = False
     
     dateiname = spielstand_auswaehlen()
     if dateiname:
         spielmarker, punktestand, spieler = spielstand_laden(dateiname)
         beginnender_spieler = spielmarker
-        
-        
     else:
         print("\nEs wird ein neues Spiel gestartet.\n")
         spieler = spieler_eingabe()
@@ -352,17 +362,20 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
         spielmarker = beginnender_spieler
         punktestand = {spielername: 0 for spielername in spieler}
         
-        
-    erste_runde = True
-    spiel_beendet = False
+
     while not spiel_beendet:
         for spieler_name, punkte in punktestand.items():
             if punkte >= 6000:
-                print(f"\n{spieler_name}, Sie haben gewonnen und haben {punkte} Punkte.\n")
+                print(f"\n{spieler_name}, Du hast gewonnen und hast {punkte} Punkte.\n")
                 print(f"\nAbschließender Gesamtpunktstand: {punktestand}")
                 spiel_beendet = True
+                spielstand_speichern(punktestand)
                 break
         if spiel_beendet == True:
+            if dateiname:
+                os.remove(dateiname)
+                print(f"\nDie zuvor geladene Datei {dateiname[:-4]} wurde gelöscht\n")
+                sys.exit()
             break
         if spielmarker == beginnender_spieler and erste_runde != True:
             speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [nein]?\n")
@@ -371,6 +384,7 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
             if speichern == "ja":
                 print(f"\nAktueller Punktestand: {punktestand}\n")
                 spielstand_speichern(punktestand)
+                sys.exit()
         spieler_an_der_reihe = spieler[spielmarker]
         print(f"\nAktueller Punktestand: {punktestand}\n")
         print(f"\n{spieler_an_der_reihe}, du bist dran:")
