@@ -26,7 +26,7 @@ def spieler_eingabe():
     spieler =[]
     while spielername != "":
         print(f"\nEingetragene Spieler: {', '.join(spieler)}\n")
-        spielername = input("\nBitte gib  einzeln die Spielernamen ein (Enter zum Beenden): ")
+        spielername = input("\nBitte gib einzeln die Spielernamen ein (Enter zum Beenden): ")
         try:
             int(spielername)
             print("\nEingabe von Zahlen nicht erlaubt!\n")
@@ -44,7 +44,7 @@ def spielstand_speichern(punktestand):
     global spieler
     datum_uhrzeit = str(datetime.datetime.now())
     datum_uhrzeit = datum_uhrzeit[0:19:1]
-    if spiel_beendet == True:
+    if spiel_beendet:
         with open("Archiv.txt", 'a') as archiv:
             archiv.write(f"Finaler Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Gewinner = {spieler[spielmarker]}\n" + "-" * 30 + "\n\n")
             for spieler, punkte in punktestand.items():
@@ -83,8 +83,7 @@ def spielstand_auswaehlen():
             continue
         if auswahl == 0:
             return None
-        dateiname = spielstaende[auswahl - 1]
-        return dateiname
+        return spielstaende[auswahl - 1]
     
 
 def spielstand_laden(dateiname):
@@ -104,9 +103,7 @@ def spielstand_laden(dateiname):
     return int(spielmarker.strip()), punktestand, spieler
             
 def wuerfeln(anzahl_wuerfel):
-    wurf = [random.randint(1,6) for _ in range(anzahl_wuerfel)]
-    wurf.sort()
-    return wurf
+    return sorted([random.randint(1,6) for _ in range(anzahl_wuerfel)])
 
 def wuerfel_auswaehlen(wurf):   #!!! Achtung beim erneuten zurücklegen werden würfel gelöscht! Fälschlich weggelegt würfel lassen sich nicht zurückholen und verfallen beim , aber lösen ein tutto aus
     auswahl = -1
@@ -167,7 +164,7 @@ def spielkarte_bonus(bonus): #letzer Würfel muss auch "bewusst" gewählt werden
             print(f"\nIhre aktelle Karte: Bonus {bonus}")
             weggelegte_wuerfel, uebrige_wuerfel  =wuerfel_auswaehlen(wurf)
             punkte_Auswahl, korrekte_Auswahl = punkte_pruefen(weggelegte_wuerfel)
-            if korrekte_Auswahl == False:
+            if not korrekte_Auswahl:
                 print("\nDu hast ungültige Würfel weggelegt. Bitte erneut Auswählen\n")
                 continue
             punkte += punkte_Auswahl
@@ -192,7 +189,7 @@ def spielkarte_strasse():
     anzahl_wuerfel = 6
     strasse = []
     weitermachen = True
-    while weitermachen == True and anzahl_wuerfel > 0:
+    while weitermachen and anzahl_wuerfel > 0:
         wurf = wuerfeln(anzahl_wuerfel)
         weitermachen = False
         for wuerfel in wurf:
@@ -259,25 +256,25 @@ def spielkarte_plus_minus_tausend():
             elif wert == 5 and anzahl != 0:
                 wurf.remove(wert)
         if len(wurf) == anzahl_wuerfel:
-            tutto = False
-            return tutto
+            return False
         elif len(wurf) == 0:
-            tutto = True
-            return tutto
+            return True
         else:
             anzahl_wuerfel = len(wurf)
             continue
 
 def spielkarte_kleeblatt():
-    tutto_1 = spielkarte_plus_minus_tausend()
-    if tutto_1 == True:
-        tutto_2 = spielkarte_plus_minus_tausend()
-    else:
-        return False
-    if tutto_2 == True:
-        return True
-    else:
-        return False
+    return spielkarte_plus_minus_tausend() and spielkarte_plus_minus_tausend() 
+
+    # tutto_1 = spielkarte_plus_minus_tausend()
+    # if tutto_1 == True:
+    #     tutto_2 = spielkarte_plus_minus_tausend()
+    # else:
+    #     return False
+    # if tutto_2 == True:
+    #     return True
+    # else:
+    #     return False
 
 def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
     punkte_runde = 0
@@ -318,8 +315,7 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
             else:
                 print("\nTutto nicht geschafft. Der nächste Spieler ist an der Reihe.\n")
         elif gezogene_karte == "Kleeblatt":
-            geschafft = spielkarte_kleeblatt()
-            if geschafft == True:
+            if spielkarte_kleeblatt() == True:
                 punkte_runde = -1
                 return punkte_runde
             else:
@@ -333,7 +329,7 @@ def spielerzug(): #Wenn 1. Wurf ein Nullwurf, Ausgabe "Alle Punkte verloren"
         else:
             punkte_runde = 0
             print("\nKeine Punkte für diese Runde.\n") 
-        if tutto == False:
+        if not tutto:
             return punkte_runde
         else:
             print("\nIn diesem Zug hast Du bisher", punkte_runde, "Punkte gesammelt.\n")
@@ -371,7 +367,7 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
                 spiel_beendet = True
                 spielstand_speichern(punktestand)
                 break
-        if spiel_beendet == True:
+        if spiel_beendet:
             if dateiname:
                 os.remove(dateiname)
                 print(f"\nDie zuvor geladene Datei {dateiname[:-4]} wurde gelöscht\n")
