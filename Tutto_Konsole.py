@@ -16,13 +16,8 @@ import random, collections, datetime, sys, os, time
 #Allgemeine Startbedingungen
 spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk", "plus_minus_tausend", "Kleeblatt"]
 #wahrscheinlichkeiten =[5,5,5,5,5,5,10,5,5,5,1] #56 Karten
-wahrscheinlichkeiten =[0,0,0,0,1,1,1,1,1,1,1] #56 Karten
-verbotene_zeichen = ("!", "@", "#", "$", "%", "^", "&", "*", "(", ")",".", "+", "=", "{", "}", "[", "]", "|", "\\", ":", ";", "\"", "'", "<", ">", ",", "?", "/", "~", "`", "§", "€", "£", "¥", "°")
-
-# def schreiben(text):
-#     for zeichen in text:
-#         print(zeichen, end="", flush = True)
-#         time.sleep(0.01)
+wahrscheinlichkeiten =[0,0,0,0,0,0,0,0,0,0,1] #56 Karten
+verbotene_zeichen = ("!", "@", "#", "$", "%", "^", "&", "*", "(", ")",".", "+", "=", "{", "}", "[", "]", "|", "\\", ":", ";", "\"", "'", "<", ">", ",", "?", "/", "~", "`", "§", "€", "£", "¥", "°", " ")
 
 def spieler_eingabe():
     spielername = -1
@@ -46,24 +41,42 @@ def spieler_eingabe():
                         print("\nName schon vorhanden.\n")
                         continue
                     spieler.append(spielername)
-        if len(spieler) == 0:
-            print("Mindestens 1 Spieler eingeben!")
+        if len(spieler) < 2:
+            print("\nMindestens 2 Spieler eingeben!")
             spielername = None
             continue
         break
     return spieler
 
-def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname): #Noch prüfen, ob dateiname schon vorhanden ist.
+def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner):
     
     datum_uhrzeit = str(datetime.datetime.now())
     datum_uhrzeit = datum_uhrzeit[:19]
     if spiel_beendet:
+        
+        #Archiv
+        if dateiname == None:
+            while True:
+                print("\nBitte gib dem Spiel noch einen Namen (Für das Archiv): \n")
+                dateiname = input()
+                if any(zeichen in dateiname for zeichen in verbotene_zeichen):
+                    print("\nUngültige Eingabe.\n")
+                    continue
+                if dateiname == "":
+                    print("\nUngültige Eingabe.\n")
+                    continue
+                break
         with open("Archiv.txt", 'a') as archiv:
-            archiv.write(f"Finaler Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Gewinner = {spieler[spielmarker]}\n" + "-" * 30 + "\n\n")
+            archiv.write(f"\nDateiname: {dateiname}\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Gewinner = {gewinner}\n" + "-" * 30 + "\n\n")
             for spieler, punkte in punktestand.items():
                 archiv.write(f"{spieler}: {punkte}\n")
             archiv.write(100 * "_" + "\n")
             print("\nDie Partie wurde im Archiv gespeichert.\n")
+        
+        #Bestenliste
+        
+            
+        
     else:
         while True:
             dateiname_neu = input("Speichern als: ")
@@ -146,10 +159,10 @@ def wuerfeln(anzahl_wuerfel):
         eingabe = input()
         print("\nUngültige Eingabe.\n")
         continue
-    time.sleep(0.2)
+    #time.sleep(0.2)
     for wuerfel in wurf:
         print(wuerfel, end = " ", flush = True)
-        time.sleep(0.3)
+        #time.sleep(0.3)
     print()        
     return sorted(wurf)
 
@@ -414,10 +427,13 @@ def spielerzug(punktestand, spieler_an_der_reihe): #Wenn 1. Wurf ein Nullwurf, A
                 break
         continue
 
-def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
+def spielablauf():
     erste_runde = True
     spiel_beendet = False
+    spieler_an_der_reihe = None
+    gewinner = None
     
+    #Initialisieren
     dateiname, spielstaende = spielstand_auswaehlen()
     if dateiname:
         spielmarker, punktestand, spieler = spielstand_laden(dateiname)
@@ -434,26 +450,33 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
     while not spiel_beendet:
         
         #Gewinnerabfrage
-        for spieler_name, punkte in punktestand.items():
-            if punkte >= 6000 and spielmarker == beginnender_spieler:
-                print(f"\n{spieler_name}, Du hast gewonnen und hast {punkte} Punkte.\n")
-                print(80*"-",f"\nAbschließender Gesamtpunktestand: {punktestand}\n",80*"-", sep="")
-                spiel_beendet = True
-                spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname)
-                break
-        if spiel_beendet:
-            if dateiname:
-                try:
-                    os.remove(dateiname)
-                    print(f"\nDie zuvor geladene Datei {dateiname[:-4]} wurde gelöscht.\n")
-                except OSError:
-                    print("\nFehler beim Löschen.")
-            while True:
-                if input("Enter zum Beenden: ") != "":
-                    print("\nUngültige Eingabe\n")
-                    continue
-                break
-            sys.exit()
+        if erste_runde != True:
+            for spieler_name, punkte in punktestand.items():
+                if punkte >= 6000 and spielmarker == beginnender_spieler:
+                    punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
+                    punktezahlen = list(punktestand_sortiert.values())
+                    if len(punktezahlen) > 1 and punktezahlen[0] == punktezahlen[1]:
+                        print("Unglaublich! Ein Unentschieden! Das Spiel wurde nicht gespeichert. Am besten ihr spielt nochmal =)")
+                        sys.exit()
+                    gewinner = next(iter(punktestand_sortiert))
+                    print(f"\n{gewinner}, Du hast gewonnen und hast {punkte} Punkte.\n")
+                    print(80*"-",f"\nAbschließender Gesamtpunktestand: {punktestand}\n",80*"-", sep="")
+                    spiel_beendet = True
+                    spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
+                    break
+            if spiel_beendet:
+                if dateiname:
+                    try:
+                        os.remove(dateiname)
+                        print(f"\nDie zuvor geladene Datei {dateiname[:-4]} wurde gelöscht.\n")
+                    except OSError:
+                        print("\nFehler beim Löschen.")
+                while True:
+                    if input("Enter zum Beenden: ") != "":
+                        print("\nUngültige Eingabe\n")
+                        continue
+                    break
+                sys.exit()
             
         #Speicherabfrage
         if spielmarker == beginnender_spieler and erste_runde != True:
@@ -463,7 +486,7 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
                     break
                 elif speichern == "ja":
                     print(f"\nAktueller Punktestand: {punktestand}\n")
-                    spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname)
+                    spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
                     while True:
                         if input("Enter zum Beenden: ") != "":
                             print("\nUngültige Eingabe\n")
@@ -484,15 +507,17 @@ def spielablauf():      #Beim Erreichen der Punkte, wird Spiel direkt beendet.
             print("\nUngültige Eingabe.\n")
             continue
         punkte_runde = spielerzug(punktestand, spieler_an_der_reihe)
-        print(f"\nDu hast diese Runde insgesamt {punkte_runde} Punkte gesammelt!")
+        if punkte_runde >= 0:
+            print(f"\nDu hast diese Runde insgesamt {punkte_runde} Punkte gesammelt!")
 
             
         #Kleeblattabfrage
         if punkte_runde < 0:
             print(f"\n{spieler_an_der_reihe}, du hast durch das Kleblatt gewonnen!\n")
             spiel_beendet = True
-            punktestand[spieler_an_der_reihe] = "Durch das Kleeblatt gewonnen!"
-            spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname)
+            gewinner = spieler_an_der_reihe
+            punktestand[spieler_an_der_reihe] = 99999
+            spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
             while True:
                 if input("Enter zum Beenden: ") != "":
                     print("\nUngültige Eingabe\n")
