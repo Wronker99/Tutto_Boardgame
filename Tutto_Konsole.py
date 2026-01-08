@@ -16,7 +16,8 @@ import random, collections, datetime, sys, os, time
 #Allgemeine Startbedingungen
 spielkarten = [200, 300, 400, 500, 600, "x2", "Aussetzer", "Strasse", "Feuerwerk", "plus_minus_tausend", "Kleeblatt"]
 #wahrscheinlichkeiten =[5,5,5,5,5,5,10,5,5,5,1] #56 Karten
-wahrscheinlichkeiten =[0,0,0,0,0,0,0,0,0,0,1] #56 Karten
+wahrscheinlichkeiten = [5, 5, 5, 5, 5, 8, 3, 10, 10, 8, 4]
+#wahrscheinlichkeiten =[0,0,0,0,0,0,0,0,0,0,1] #56 Karten
 verbotene_zeichen = ("!", "@", "#", "$", "%", "^", "&", "*", "(", ")",".", "+", "=", "{", "}", "[", "]", "|", "\\", ":", ";", "\"", "'", "<", ">", ",", "?", "/", "~", "`", "§", "€", "£", "¥", "°", " ")
 
 #Pfade
@@ -65,7 +66,7 @@ def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, 
     if spiel_beendet:
         
         #Archiv
-        if dateiname == None:
+        if dateiname is None:
             while True:
                 print("\nBitte gib dem Spiel noch einen Namen (Für das Archiv): \n")
                 dateiname = input()
@@ -423,7 +424,7 @@ def spielerzug(punktestand, spieler_an_der_reihe): #Wenn 1. Wurf ein Nullwurf, A
         elif gezogene_karte == "plus_minus_tausend":     
             print("\nDu hast +/- Tausend gezogen.\n")
             geschafft = spielkarte_plus_minus_tausend()
-            if geschafft == True:
+            if geschafft:
                 punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
                 fuehrender_spieler = next(iter(punktestand_sortiert))
                 if punktestand[fuehrender_spieler] >= 1000 and fuehrender_spieler != spieler_an_der_reihe:
@@ -442,7 +443,7 @@ def spielerzug(punktestand, spieler_an_der_reihe): #Wenn 1. Wurf ein Nullwurf, A
                 print("\nTutto nicht geschafft. Der nächste Spieler ist an der Reihe.\n")
                 #time.sleep(1)
         elif gezogene_karte == "Kleeblatt":
-            if spielkarte_kleeblatt() == True:
+            if spielkarte_kleeblatt():
                 punkte_runde = -1
                 return punkte_runde
             else:
@@ -492,7 +493,7 @@ def spielablauf():
     while not spiel_beendet:
         
         #Gewinnerabfrage
-        if erste_runde != True:
+        if not erste_runde:
             for spieler_name, punkte in punktestand.items():
                 if punkte >= 6000 and spielmarker == beginnender_spieler:
                     punktestand_sortiert = dict(sorted(punktestand.items(), key = lambda item: item[1], reverse = True))
@@ -511,23 +512,23 @@ def spielablauf():
                 sys.exit()
             
         #Speicherabfrage
-        # if spielmarker == beginnender_spieler and erste_runde != True:
-        #     while True:
-        #         speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [nein]?\n")
-        #         if speichern == "nein":
-        #             break
-        #         elif speichern == "ja":
-        #             print(f"\nAktueller Punktestand: {punktestand}\n")
-        #             spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
-        #             while True:
-        #                 if input("Enter zum Beenden: ") != "":
-        #                     print("\nUngültige Eingabe\n")
-        #                     continue
-        #                 break
-        #             sys.exit()
-        #         else:
-        #             print("\nUngültige Eingabe")
-        #             continue
+        if spielmarker == beginnender_spieler and not erste_runde:
+            while True:
+                speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [nein]?\n")
+                if speichern == "nein":
+                    break
+                elif speichern == "ja":
+                    print(f"\nAktueller Punktestand: {punktestand}\n")
+                    spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
+                    while True:
+                        if input("Enter zum Beenden: ") != "":
+                            print("\nUngültige Eingabe\n")
+                            continue
+                        break
+                    sys.exit()
+                else:
+                    print("\nUngültige Eingabe")
+                    continue
 
         #Zugbeginn
         spieler_an_der_reihe = spieler[spielmarker]
