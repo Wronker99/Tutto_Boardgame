@@ -101,41 +101,37 @@ def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, 
                 
     #Spielstand speichern
     else:
-        while True:
-            dateiname_neu = input("Speichern als: ")
-            ueberschrieben = False
-            if any(zeichen in dateiname_neu for zeichen in verbotene_zeichen):
-                print("\nUngültige Eingabe.\n")
-                continue
-            if dateiname == "":
-                print("\nUngültige Eingabe.\n")
-                continue
-            if dateiname_neu == "Archiv" or dateiname_neu == "archiv" or dateiname_neu == "Bestenliste" or dateiname_neu == "bestenliste":
-                print("\nUngültige Eingabe.\n")
-                continue
-            if dateiname_neu + ".txt" in spielstaende and dateiname_neu + ".txt" != dateiname:
-                print("\nName schon vergeben.\n")
-                continue
-            if len(dateiname_neu) > 16:
-                print("\nName zu lang!\n")
-                continue
-            if dateiname and dateiname_neu == dateiname[:-4]:
-                datei_pfad = os.path.join(ordner_spielstaende, dateiname)
-                os.remove(datei_pfad)
-                ueberschrieben = True
-            dateiname_neu = dateiname_neu + ".txt"
-    
-            #Pfad der Datei
-            dateipfad = os.path.join(ordner_spielstaende, dateiname_neu)
-            with open(dateipfad, 'w') as datei:
-                datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
-                for spielername, punkte in punktestand.items():
-                    datei.write(f"{spielername}: {punkte}\n")
-            if ueberschrieben:
-                print(f"\nDer Spielstand \"{dateiname_neu[:-4]}\" wurde überschrieben.\n")
-            else: 
-                print(f"Spiel erfolgreich im Arbeitsverzeichnis unter \"{dateiname_neu[:-4]}\" gespeichert.")
-            break
+        if dateiname:
+            print(f"\nDer Spielstand \"{dateiname[:-4]}\" wurde überschrieben.\n")
+        else:
+            while True:
+                dateiname = input("Speichern als: ")
+                if any(zeichen in dateiname for zeichen in verbotene_zeichen):
+                    print("\nUngültige Eingabe.\n")
+                    continue
+                if dateiname == "":
+                    print("\nUngültige Eingabe.\n")
+                    continue
+                if dateiname == "Archiv" or dateiname == "archiv" or dateiname == "Bestenliste" or dateiname == "bestenliste":
+                    print("\nUngültige Eingabe.\n")
+                    continue
+                if dateiname + ".txt" in spielstaende:
+                    print("\nName schon vergeben.\n")
+                    continue
+                if len(dateiname) > 16:
+                    print("\nName zu lang!\n")
+                    continue
+                dateiname += ".txt"
+                print(f"\nSpiel erfolgreich als \"{dateiname[:-4]}\" gespeichert.")
+                break
+        
+        #Pfad der Datei
+        dateipfad = os.path.join(ordner_spielstaende, dateiname)
+        with open(dateipfad, 'w') as datei:
+            datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
+            for spielername, punkte in punktestand.items():
+                datei.write(f"{spielername}: {punkte}\n")
+
         
 def spielstand_auswaehlen():
     alle_dateien = os.listdir(ordner_spielstaende)
@@ -521,7 +517,7 @@ def spielablauf():
                     print(f"\nAktueller Punktestand: {punktestand}\n")
                     spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
                     while True:
-                        if input("Enter zum Beenden: ") != "":
+                        if input("\nEnter zum Beenden: ") != "":
                             print("\nUngültige Eingabe\n")
                             continue
                         break
