@@ -28,7 +28,6 @@ bestenliste_pfad = os.path.join(pfad_programm, "Bestenliste.txt")
 os.makedirs(ordner_spielstaende, exist_ok=True)
 
 
-
 def spieler_eingabe():
     spielername = -1
     spieler =[]
@@ -81,7 +80,7 @@ def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, 
             archiv.write(f"\nDateiname: {dateiname}\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Gewinner = {gewinner}\n" + "-" * 30 + "\n\n")
             for spieler, punkte in punktestand.items():
                 archiv.write(f"{spieler}: {punkte}\n")
-            archiv.write(100 * "_" + "\n")
+            archiv.write(50 * "_" + "\n")
             print("\nDie Partie wurde im Archiv gespeichert.\n")
         
         #Bestenliste
@@ -131,8 +130,7 @@ def spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, 
             datei.write(f"Aktueller Spielstand:\nAbgespeichert am {datum_uhrzeit}\n" + "-" * 30 + "\n" + f"Aktueller Spieler = {spielmarker}\n" + "-" * 30 + "\n")
             for spielername, punkte in punktestand.items():
                 datei.write(f"{spielername}: {punkte}\n")
-
-        
+       
 def spielstand_auswaehlen():
     alle_dateien = os.listdir(ordner_spielstaende)
     spielstaende = [datei for datei in alle_dateien if datei.endswith(".txt")]
@@ -198,27 +196,29 @@ def wuerfeln(anzahl_wuerfel):
         eingabe = input()
         print("\nUngültige Eingabe.\n")
         continue
-    #time.sleep(0.2)
+    time.sleep(0.4)
     for wuerfel in wurf:
         print(wuerfel, end = " ", flush = True)
-        #time.sleep(0.3)
+        time.sleep(0.5)
     print()        
     return sorted(wurf)
 
 def wuerfel_auswaehlen(wurf):
     auswahl = -1
     weggelegte_wuerfel = [] 
-    while auswahl != 0:
+    while auswahl != "":
         print("-" * 30)
         print("Ausgewählte_Würfel: ", *weggelegte_wuerfel)
         print("Ihr wurf: ", *wurf)
+        auswahl = input("Würfel zum Weglegen nennen (Nur [ENTER] zum Abschließen)\n + [ENTER]: ")
+        if auswahl == "":
+            break        
         try:
-            auswahl = int(input("Würfel zum Weglegen nennen (0 zum Abschließen)\n + [ENTER]: "))
+            auswahl = int(auswahl)
         except ValueError:
             print("\n!!! Ungültige Eingabe !!!\n")
             continue
-        if auswahl == 0:
-            break
+
         if auswahl not in wurf:
             print("\n!!! Ungültige Eingabe !!!\n")
             continue
@@ -393,7 +393,6 @@ def spielkarte_plus_minus_tausend():
 def spielkarte_kleeblatt():
     print("\nDu hast das Kleeblatt gezogen!\n")
     #return spielkarte_plus_minus_tausend() and spielkarte_plus_minus_tausend() 
-
     if spielkarte_plus_minus_tausend():
         print("\nSie haben das 1. Tutto geschafft! Weiter gehts!")
         #time.sleep(.5)
@@ -433,7 +432,7 @@ def spielerzug(punktestand, spieler_an_der_reihe): #Wenn 1. Wurf ein Nullwurf, A
                     print("\nDu hast das Tutto geschafft!\n\nDu erhältst 1000 Punkte")
                 punkte_karte = 1000
                 #time.sleep(1)
-                return punkte_runde
+                #return punkte_runde
             else:
                 punkte_karte = 0
                 print("\nTutto nicht geschafft. Der nächste Spieler ist an der Reihe.\n")
@@ -484,8 +483,6 @@ def spielablauf():
         spielmarker = beginnender_spieler
         punktestand = {spielername: 0 for spielername in spieler}
         dateiname = None
-        
-
     while not spiel_beendet:
         
         #Gewinnerabfrage
@@ -498,7 +495,7 @@ def spielablauf():
                         print("Unglaublich! Ein Unentschieden! Das Spiel wurde nicht gespeichert. Am besten ihr spielt nochmal =)")
                         sys.exit()
                     gewinner = next(iter(punktestand_sortiert))
-                    print(f"\n{gewinner}, Du hast gewonnen und hast {punkte} Punkte.\n")
+                    print(f"\n{gewinner}, Du hast gewonnen und hast {punktezahlen[0]} Punkte.\n")
                     print(80*"-",f"\nAbschließender Gesamtpunktestand: {punktestand}\n",80*"-", sep="")
                     spiel_beendet = True
                     spielstand_speichern(punktestand, spielmarker, spiel_beendet, spielstaende, spieler, dateiname, gewinner)
@@ -510,8 +507,8 @@ def spielablauf():
         #Speicherabfrage
         if spielmarker == beginnender_spieler and not erste_runde:
             while True:
-                speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [nein]?\n")
-                if speichern == "nein":
+                speichern = input("\nMöchtest Du das Spiel speichern und beenden [ja] oder fortfahren [ENTER]?\n")
+                if speichern == "":
                     break
                 elif speichern == "ja":
                     print(f"\nAktueller Punktestand: {punktestand}\n")
@@ -525,7 +522,6 @@ def spielablauf():
                 else:
                     print("\nUngültige Eingabe")
                     continue
-
         #Zugbeginn
         spieler_an_der_reihe = spieler[spielmarker]
         print(80*"-",f"\nAktueller Punktestand: {punktestand}\n",80*"-", sep="")
@@ -538,8 +534,6 @@ def spielablauf():
         punkte_runde = spielerzug(punktestand, spieler_an_der_reihe)
         if punkte_runde >= 0:
             print(f"\nDu hast diese Runde insgesamt {punkte_runde} Punkte gesammelt!")
-
-            
         #Kleeblattabfrage
         if punkte_runde < 0:
             print(f"\n{spieler_an_der_reihe}, du hast durch das Kleblatt gewonnen!\n")
@@ -560,48 +554,3 @@ def spielablauf():
         
  
 spielablauf()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
